@@ -7,13 +7,17 @@ dT = time_bin_T/n_sample_per_time_bin;
 [cross_brain_corr,shuffled_corr_p,cross_brain_cohr] = deal(cell(1,n_time_bins));
 time_axis_dim = 5;
 
-[~,shuffled_corr_pre_calc] = calculate_event_trig_cross_brain_corr(activation,'time_idx',time_idx(:,1),...
-    'shuffle_type','randomShuffle','n_shuffle_reps',1e2);
+shuffleType = expParams.corr_shuffle_type;
+shuffled_corr_pre_calc = [];
+if strcmp(shuffleType,'preCalc')
+    [~,shuffled_corr_pre_calc] = calculate_event_trig_cross_brain_corr(activation,'time_idx',time_idx(:,1),...
+        'shuffle_type','randomShuffle','n_shuffle_reps',expParams.n_shuffle_reps);
+end
 
 for time_bin_k = 1:n_time_bins
     [cross_brain_corr{time_bin_k},~,shuffled_corr_p{time_bin_k},cross_brain_cohr{time_bin_k}] = ...
         calculate_event_trig_cross_brain_corr(activation,'time_idx',time_idx(:,time_bin_k),...
-        'shuffle_type','preCalc','dT',dT,'time_bin_T',time_bin_T,...
+        'shuffle_type',shuffleType,'dT',dT,'time_bin_T',time_bin_T,...
         'pre_calc_shuffled_corr',shuffled_corr_pre_calc);
 end
 
@@ -22,7 +26,7 @@ cross_brain_cohr = cat(time_axis_dim,cross_brain_cohr{:});
 shuffled_corr_p = cat(time_axis_dim,shuffled_corr_p{:});
 
 [~,~,~,~,cross_brain_corr_index] = calculate_event_trig_cross_brain_corr(activation,...
-    'shuffle_type','none','corr_index_flag',true,'n_shuffle_reps',1e3);
+    'shuffle_type','none','corr_index_flag',true,'n_shuffle_reps',expParams.n_shuffle_reps);
 
 if ~isempty(cut_call_fname)
     

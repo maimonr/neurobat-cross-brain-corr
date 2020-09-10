@@ -1,6 +1,14 @@
-function [ps,n_call_artifact_times,specParams,expParams] = calculate_event_trig_lfp_ps(eData,event_trig_fnames)
+function [ps,n_call_artifact_times,specParams,expParams] = calculate_event_trig_lfp_ps(expType,event_trig_fnames,varargin)
 
-if any(strcmp(eData.expType,{'adult','adult_operant'}))
+if ~isempty(varargin)
+    callType = varargin;
+else
+    callType = 'call';
+end
+
+switch expType
+    
+    case {'adult','adult_operant','adult_social'}
         
         batNums = arrayfun(@(x) regexp(x.name,'^\d{5}','match'),event_trig_fnames,'un',0);
         batNums = batNums(~cellfun(@isempty,batNums));
@@ -14,7 +22,7 @@ if any(strcmp(eData.expType,{'adult','adult_operant'}))
         
         fs = 2083;
         
-elseif strcmp(eData.expType,'juvenile')
+    case 'juvenile'
         
         batNums = regexp(event_trig_fnames.folder,'bat\d{5}','match');
         
@@ -28,7 +36,8 @@ elseif strcmp(eData.expType,'juvenile')
         fs = 1953;
 end
 
-if any(strcmp(eData.callType, {'call','operant'}))
+switch callType
+    case 'call'
         
         csc_var_name = 'call_trig_csc';
         
@@ -47,7 +56,7 @@ if any(strcmp(eData.callType, {'call','operant'}))
         used_playback_timestamps = [];
         used_playback_durations = [];
         
-elseif strcmp(eData.callType, 'playback')
+    case 'playback'
         
         csc_var_name = 'playback_csc';
         

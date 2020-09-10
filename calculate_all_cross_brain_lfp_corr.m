@@ -38,6 +38,9 @@ switch eData.callType
             case 'adult_operant'
                 nBats_per_exp = 4;
                 nBats_total = 4;
+            case 'adult_social'
+                nBats_per_exp = 4;
+                nBats_total = 5;
         end
     case 'operant'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*call_trig_operant_box_*' event_trig_str '.mat']));
