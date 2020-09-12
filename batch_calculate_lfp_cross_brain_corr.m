@@ -189,6 +189,11 @@ switch expType
                     session_bat_idx(bat_k) = contains(event_trig_csc_fnames(bat_k).name,batNums);
                 end
                 event_trig_csc_fnames = event_trig_csc_fnames(session_bat_idx);
+            case 'social'
+                cut_call_fname = fullfile(call_base_dir,[exp_date_str '_cut_call_data_social.mat']);
+                event_trig_lfp_fname = [exp_date_str '_LFP_call_trig_social.mat'];
+                results_fname = fullfile(analysis_dir,[exp_date_str '_call_trig_social_ps_corr.mat']);
+                event_trig_csc_fnames = dir(fullfile(lfp_base_dir,['*' event_trig_lfp_fname]));
         end
         
         

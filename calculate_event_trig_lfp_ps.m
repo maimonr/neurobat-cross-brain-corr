@@ -12,7 +12,7 @@ switch expType
         
         batNums = arrayfun(@(x) regexp(x.name,'^\d{5}','match'),event_trig_fnames,'un',0);
         batNums = batNums(~cellfun(@isempty,batNums));
-        assert(length(batNums) >= 1 && length(batNums) <= 4)
+        assert(length(batNums) >= 1 && length(batNums) <= 5)
         
         for bat_k = 1:length(batNums)
             event_trig_csc(bat_k) = load(fullfile(event_trig_fnames(bat_k).folder,event_trig_fnames(bat_k).name)); %#ok<AGROW>

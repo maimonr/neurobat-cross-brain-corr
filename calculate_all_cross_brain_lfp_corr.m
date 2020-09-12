@@ -1,8 +1,8 @@
 function bat_pair_corr_info = calculate_all_cross_brain_lfp_corr(eData,include_trial_flag,varargin)
 
-pnames = {'concatenate_sessions_flag','select_bat_nums','dataType','combine_single_units'};
-dflts  = {true,[],'lfp',false};
-[concatenate_sessions_flag,select_bat_nums,dataType,combine_single_units] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+pnames = {'concatenate_sessions_flag','select_bat_nums','dataType','combine_single_units','callType'};
+dflts  = {true,[],'lfp',false,'call'};
+[concatenate_sessions_flag,select_bat_nums,dataType,combine_single_units,callType] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 baseDir = unique(eData.baseDirs);
 
@@ -24,28 +24,31 @@ switch dataType
 end
 
 
-switch eData.callType
+switch eData.expType{1}
+    case 'adult'
+        nBats_per_exp = 3;
+        nBats_total = 4;
+    case 'adult_operant'
+        nBats_per_exp = 4;
+        nBats_total = 4;
+    case 'adult_social'
+        nBats_per_exp = 4;
+        nBats_total = 5;
+end
+
+switch callType
     case 'playback'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*playback_' event_trig_str '.mat']));
         nBats_per_exp = 2;
         nBats_total = 2;
     case 'call'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*call_trig_' event_trig_str '.mat']));
-        switch eData.expType{1}
-            case 'adult'
-                nBats_per_exp = 3;
-                nBats_total = 4;
-            case 'adult_operant'
-                nBats_per_exp = 4;
-                nBats_total = 4;
-            case 'adult_social'
-                nBats_per_exp = 4;
-                nBats_total = 5;
-        end
     case 'operant'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*call_trig_operant_box_*' event_trig_str '.mat']));
         nBats_per_exp = 2;
         nBats_total = 4;
+    case 'social'
+        event_trig_corr_fnames = dir(fullfile(baseDir,['*call_trig_social_' event_trig_str '.mat']));
     case 'test'
         nChannel = 4;
         event_trig_corr_fnames = dir(fullfile(baseDir,'test_call_trig_ps.mat'));
@@ -100,23 +103,23 @@ n_time_bins = size(s.expParams.time_bins,1);
 time_bin_T = unique(round(diff(s.expParams.time_bins,[],2),3));
 
 if strcmp(dataType,'lfp')
-        
-        used_channels_by_bat = cell(1,nBats_total);
-        channel_pairs = cell(1,2);
-        [channel_pairs{1},channel_pairs{2}] = meshgrid(1:nChannel,1:nChannel);
-        channel_pairs = cellfun(@(x) reshape(x,1,[]),channel_pairs,'un',0);
-        channel_pairs = vertcat(channel_pairs{:})';
-        
-        for bat_k = 1:nBats_total
-            used_channels_by_bat{bat_k} = eData.activeChannels{strcmp(eData.batNums,all_bat_nums{bat_k})};
-        end
-        
-        nT = length(s.expParams.ps_time);
-        n_sample_per_time_bin = round(time_bin_T/mode(diff(s.expParams.ps_time)));
-        
+    
+    used_channels_by_bat = cell(1,nBats_total);
+    channel_pairs = cell(1,2);
+    [channel_pairs{1},channel_pairs{2}] = meshgrid(1:nChannel,1:nChannel);
+    channel_pairs = cellfun(@(x) reshape(x,1,[]),channel_pairs,'un',0);
+    channel_pairs = vertcat(channel_pairs{:})';
+    
+    for bat_k = 1:nBats_total
+        used_channels_by_bat{bat_k} = eData.activeChannels{strcmp(eData.batNums,all_bat_nums{bat_k})};
+    end
+    
+    nT = length(s.expParams.ps_time);
+    n_sample_per_time_bin = round(time_bin_T/mode(diff(s.expParams.ps_time)));
+    
 elseif any(strcmp(dataType,{'mua','singleUnit'}))
-        nT = length(s.expParams.fr_time);
-        n_sample_per_time_bin = round(time_bin_T/mode(diff(s.expParams.fr_time)));
+    nT = length(s.expParams.fr_time);
+    n_sample_per_time_bin = round(time_bin_T/mode(diff(s.expParams.fr_time)));
 end
 
 dT = time_bin_T/n_sample_per_time_bin;
@@ -157,7 +160,7 @@ for exp_k = 1:n_exp_day
     cross_brain_cohr{exp_k} = nan(nFreq,n_bat_pairs,n_f_band,n_time_bins);
     cross_brain_corr_index{exp_k} = nan(nTrial,n_bat_pairs,n_f_band,nT);
     
-    if ~strcmp(eData.callType,'playback')
+    if ~strcmp(callType,'playback')
         all_included_call_nums{exp_k} = corrData.expParams.included_call_IDs;
     end
     
@@ -166,7 +169,7 @@ for exp_k = 1:n_exp_day
         bat_pair_nums = exp_bat_pairs(bat_pair_k,:,exp_k);
         used_channel_idx = true(nChannel_pairs,1);
         
-        if strcmp(dataType,'lfp')    
+        if strcmp(dataType,'lfp')
             for bat_k = 1:2
                 bat_used_channel_idx = used_channels_by_bat{strcmp(bat_pair_nums{bat_k},all_bat_nums)};
                 used_channel_idx(~ismember(channel_pairs(:,bat_k),bat_used_channel_idx)) = false;
@@ -176,7 +179,7 @@ for exp_k = 1:n_exp_day
         batPair = corrData.expParams.batNums(bat_pairs_idx(bat_pair_k,:));
         for trial_k = 1:nTrial
             use_trial = false;
-            if strcmp(eData.callType,'playback')
+            if strcmp(callType,'playback')
                 use_trial = true;
             else
                 trial_bat_nums = corrData.expParams.included_bat_nums{trial_k};
@@ -220,7 +223,7 @@ for exp_k = 1:n_exp_day
                         
                         corr_indices = {trial_k,bat_pair_k,used_channel_idx,f_k,time_bin_k};
                         cohr_indices = {':',bat_pair_k,used_channel_idx,f_k,time_bin_k};
-                                
+                        
                         trial_corr = nanmean(corrData.cross_brain_corr(corr_indices{:}));
                         trial_corr_p = sum(corrData.shuffled_corr_p(corr_indices{:})>0.95)/sum(used_channel_idx);
                         trial_cohr = nanmean(corrData.cross_brain_cohr(cohr_indices{:}),3);
@@ -234,7 +237,7 @@ for exp_k = 1:n_exp_day
                     for time_bin_k = 1:nT
                         corr_index_indices = {trial_k,bat_pair_k,used_channel_idx,f_k,time_bin_k};
                         trial_corr_index = nanmean(corrData.cross_brain_corr_index(corr_index_indices{:}));
-                        cross_brain_corr_index{exp_k}(corr_index_indices{[1 2 4:end]}) = trial_corr_index; 
+                        cross_brain_corr_index{exp_k}(corr_index_indices{[1 2 4:end]}) = trial_corr_index;
                     end
                 end
             end
@@ -286,7 +289,7 @@ assert(size(time,1) == 1)
 bat_pair_corr_info = struct('bat_pair_corr',bat_pair_corr,...
     'bat_pair_shuffled_corr_p',bat_pair_shuffled_corr_p,'bat_pair_cohr',bat_pair_cohr,...
     'bat_pair_corr_index',bat_pair_corr_index,'all_included_call_nums',{all_included_call_nums},...
-    'all_bat_pairs',{all_bat_pairs},'expDates',expDates,'callType',eData.callType,...
+    'all_bat_pairs',{all_bat_pairs},'expDates',expDates,'callType',callType,...
     'includedCalls',include_trial_flag,'time',time);
 
 end
