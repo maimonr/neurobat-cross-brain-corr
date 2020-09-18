@@ -1,32 +1,46 @@
-function [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index,expParams] = get_cross_brain_corr(activation,time_idx,cut_call_fname,expParams)
+function [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index,expParams] = get_cross_brain_corr(activation,time_idx,cut_call_fname,expParams,varargin)
+
+pnames = {'cohrFlag','corr_index_flag','shuffle_type','dT','time_bin_T','corr_index_flag','pre_calc_shuffled_corr'};
+dflts  = {false,false};
+[cohrFlag,corr_index_flag] = internal.stats.parseArgs(pnames,dflts,varargin{:});
 
 n_time_bins = size(time_idx,2);
 n_sample_per_time_bin = mode(sum(time_idx));
-time_bin_T = unique(round(diff(expParams.time_bins,[],2),3));
-dT = time_bin_T/n_sample_per_time_bin;
+
+if cohrFlag
+    time_bin_T = unique(round(diff(expParams.time_bins,[],2),3));
+    dT = time_bin_T/n_sample_per_time_bin;
+else
+    [time_bin_T,dT] = NaN;
+end
 [cross_brain_corr,shuffled_corr_p,cross_brain_cohr] = deal(cell(1,n_time_bins));
 time_axis_dim = 5;
 
 shuffleType = expParams.corr_shuffle_type;
 shuffled_corr_pre_calc = [];
 if strcmp(shuffleType,'preCalc')
-    [~,shuffled_corr_pre_calc] = calculate_event_trig_cross_brain_corr(activation,'time_idx',time_idx(:,1),...
-        'shuffle_type','randomShuffle','n_shuffle_reps',expParams.n_shuffle_reps);
+    [~,shuffled_corr_pre_calc] = calculate_event_trig_cross_brain_corr(activation,'time_idx',...
+        time_idx(:,1),'shuffle_type','randomShuffle','n_shuffle_reps',expParams.n_shuffle_reps,...
+        'corr_index_flag',corr_index_flag);
 end
 
 for time_bin_k = 1:n_time_bins
     [cross_brain_corr{time_bin_k},~,shuffled_corr_p{time_bin_k},cross_brain_cohr{time_bin_k}] = ...
         calculate_event_trig_cross_brain_corr(activation,'time_idx',time_idx(:,time_bin_k),...
         'shuffle_type',shuffleType,'dT',dT,'time_bin_T',time_bin_T,...
-        'pre_calc_shuffled_corr',shuffled_corr_pre_calc);
+        'pre_calc_shuffled_corr',shuffled_corr_pre_calc,'corr_index_flag',corr_index_flag);
 end
 
 cross_brain_corr = cat(time_axis_dim,cross_brain_corr{:});
 cross_brain_cohr = cat(time_axis_dim,cross_brain_cohr{:});
 shuffled_corr_p = cat(time_axis_dim,shuffled_corr_p{:});
 
-[~,~,~,~,cross_brain_corr_index] = calculate_event_trig_cross_brain_corr(activation,...
-    'shuffle_type','none','corr_index_flag',true,'n_shuffle_reps',expParams.n_shuffle_reps);
+if corr_index_flag
+    [~,~,~,~,cross_brain_corr_index] = calculate_event_trig_cross_brain_corr(activation,...
+        'shuffle_type','none','corr_index_flag',true,'n_shuffle_reps',expParams.n_shuffle_reps);
+else
+    cross_brain_corr_index = NaN;
+end
 
 if ~isempty(cut_call_fname)
     

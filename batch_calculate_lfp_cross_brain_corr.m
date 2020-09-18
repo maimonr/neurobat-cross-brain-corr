@@ -6,7 +6,7 @@ dflts  = {[],'call'};
 
 baseDir = unique(eData.baseDirs);
 baseDir = baseDir{1};
-expType = unique(eData.expType);
+expType = eData.expType;
 overwrite_ps_flag = true;
 overwrite_corr_flag = true;
 
@@ -95,12 +95,7 @@ switch expType
         lfp_base_dir = fullfile(baseDir,'lfp_data');
         call_base_dir = fullfile(baseDir,'call_data');
         analysis_dir = fullfile(baseDir,'data_analysis_results','lfp_data_analysis');
-        
-        if strcmp(expType,{'adult_operant','adult'})
-            T = readtable(fullfile(baseDir,'documents','recording_logs.csv'));
-        elseif strcmp(expType,'adult_social')
-            T = get_rec_logs;
-        end
+        T = readtable(fullfile(baseDir,'documents','recording_logs.csv'));
         csc_var_name = 'call_trig_csc';
         
         switch callType
