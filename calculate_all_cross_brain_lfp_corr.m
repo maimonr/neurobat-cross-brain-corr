@@ -24,7 +24,7 @@ switch dataType
 end
 
 
-switch eData.expType{1}
+switch eData.expType
     case 'adult'
         nBats_per_exp = 3;
         nBats_total = 4;

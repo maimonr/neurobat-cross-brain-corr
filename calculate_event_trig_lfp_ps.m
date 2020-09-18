@@ -47,7 +47,10 @@ switch callType
             
             for bat_k = 1:length(batNums)
                 keep_used_call_idx = ismember(event_trig_csc(bat_k).used_call_IDs,used_call_IDs);
+                current_used_call_IDs = event_trig_csc(bat_k).used_call_IDs(keep_used_call_idx);
+                [~,sortIdx] = sort(current_used_call_IDs);
                 event_trig_csc(bat_k).call_trig_csc = event_trig_csc(bat_k).call_trig_csc(:,keep_used_call_idx,:);
+                event_trig_csc(bat_k).call_trig_csc = event_trig_csc(bat_k).call_trig_csc(:,sortIdx,:); 
             end
         else
             used_call_IDs = event_trig_csc.used_call_IDs;
