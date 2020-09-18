@@ -11,7 +11,7 @@ if cohrFlag
     time_bin_T = unique(round(diff(expParams.time_bins,[],2),3));
     dT = time_bin_T/n_sample_per_time_bin;
 else
-    [time_bin_T,dT] = NaN;
+    [time_bin_T,dT] = deal(NaN);
 end
 [cross_brain_corr,shuffled_corr_p,cross_brain_cohr] = deal(cell(1,n_time_bins));
 time_axis_dim = 5;
