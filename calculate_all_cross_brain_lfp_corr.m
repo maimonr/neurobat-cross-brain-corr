@@ -157,8 +157,20 @@ for exp_k = 1:n_exp_day
     
     nChannel_pairs = size(corrData.cross_brain_corr,3);
     [cross_brain_corr{exp_k},shuffled_corr_p{exp_k}] = deal(nan(nTrial,n_bat_pairs,n_f_band,n_time_bins));
-    cross_brain_cohr{exp_k} = nan(nFreq,n_bat_pairs,n_f_band,n_time_bins);
-    cross_brain_corr_index{exp_k} = nan(nTrial,n_bat_pairs,n_f_band,nT);
+    
+    if all(isnan(corrData.cross_brain_cohr))
+        get_cohr_flag = false;
+    else
+        get_cohr_flag = true;
+        cross_brain_cohr{exp_k} = nan(nFreq,n_bat_pairs,n_f_band,n_time_bins);
+    end
+    
+    if all(isnan(corrData.cross_brain_corr_index))
+        get_index_flag = false;
+    else
+        get_index_flag = true;
+        cross_brain_corr_index{exp_k} = nan(nTrial,n_bat_pairs,n_f_band,nT);
+    end
     
     if ~strcmp(callType,'playback')
         all_included_call_nums{exp_k} = corrData.expParams.included_call_IDs;
@@ -226,18 +238,21 @@ for exp_k = 1:n_exp_day
                         
                         trial_corr = nanmean(corrData.cross_brain_corr(corr_indices{:}));
                         trial_corr_p = sum(corrData.shuffled_corr_p(corr_indices{:})>0.95)/sum(used_channel_idx);
-                        trial_cohr = nanmean(corrData.cross_brain_cohr(cohr_indices{:}),3);
+                        
+                        if get_cohr_flag
+                            trial_cohr = nanmean(corrData.cross_brain_cohr(cohr_indices{:}),3);
+                            cross_brain_cohr{exp_k}(cohr_indices{[1 2 4:end]}) = trial_cohr;
+                        end
                         
                         cross_brain_corr{exp_k}(corr_indices{[1 2 4:end]}) = trial_corr;
                         shuffled_corr_p{exp_k}(corr_indices{[1 2 4:end]}) = trial_corr_p;
-                        cross_brain_cohr{exp_k}(cohr_indices{[1 2 4:end]}) = trial_cohr;
-                        
                     end
-                    
-                    for time_bin_k = 1:nT
-                        corr_index_indices = {trial_k,bat_pair_k,used_channel_idx,f_k,time_bin_k};
-                        trial_corr_index = nanmean(corrData.cross_brain_corr_index(corr_index_indices{:}));
-                        cross_brain_corr_index{exp_k}(corr_index_indices{[1 2 4:end]}) = trial_corr_index;
+                    if get_index_flag
+                        for time_bin_k = 1:nT
+                            corr_index_indices = {trial_k,bat_pair_k,used_channel_idx,f_k,time_bin_k};
+                            trial_corr_index = nanmean(corrData.cross_brain_corr_index(corr_index_indices{:}));
+                            cross_brain_corr_index{exp_k}(corr_index_indices{[1 2 4:end]}) = trial_corr_index;
+                        end
                     end
                 end
             end
@@ -252,8 +267,14 @@ for exp_k = 1:n_exp_day
     n_bat_pairs = size(cross_brain_corr{exp_k},2);
     
     [bat_pair_corr{exp_k},bat_pair_shuffled_corr_p{exp_k}] = deal(nan(nTrial,n_all_bat_pairs,n_f_band,n_time_bins));
-    bat_pair_cohr{exp_k} = nan(nFreq,n_all_bat_pairs,n_f_band,n_time_bins);
-    bat_pair_corr_index{exp_k} = nan(nTrial,n_all_bat_pairs,n_f_band,nT);
+    
+    if get_cohr_flag
+        bat_pair_cohr{exp_k} = nan(nFreq,n_all_bat_pairs,n_f_band,n_time_bins);
+    end
+    
+    if get_index_flag
+        bat_pair_corr_index{exp_k} = nan(nTrial,n_all_bat_pairs,n_f_band,nT);
+    end
     
     for bat_pair_k = 1:n_bat_pairs
         idx = all(ismember(all_bat_pairs,squeeze(exp_bat_pairs(bat_pair_k,:,exp_k))),2);
@@ -262,9 +283,13 @@ for exp_k = 1:n_exp_day
         bat_pair_corr_indices = {':',idx,':',':'};
         
         bat_pair_corr{exp_k}(bat_pair_corr_indices{:}) = cross_brain_corr{exp_k}(bat_corr_indices{:});
-        bat_pair_cohr{exp_k}(bat_pair_corr_indices{:}) = cross_brain_cohr{exp_k}(bat_corr_indices{:});
-        bat_pair_corr_index{exp_k}(bat_pair_corr_indices{:}) = cross_brain_corr_index{exp_k}(bat_corr_indices{:});
         bat_pair_shuffled_corr_p{exp_k}(bat_pair_corr_indices{:}) = shuffled_corr_p{exp_k}(bat_corr_indices{:});
+        if get_cohr_flag
+            bat_pair_cohr{exp_k}(bat_pair_corr_indices{:}) = cross_brain_cohr{exp_k}(bat_corr_indices{:});
+        end
+        if get_index_flag
+            bat_pair_corr_index{exp_k}(bat_pair_corr_indices{:}) = cross_brain_corr_index{exp_k}(bat_corr_indices{:});
+        end
     end
 end
 
