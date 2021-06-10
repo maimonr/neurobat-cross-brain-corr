@@ -100,7 +100,7 @@ switch expType
         
         switch callType
             case 'call'
-                if strcmp(expType,{'adult_operant','adult'})
+                if ismember(expType,{'adult_operant','adult'})
                     expIdx = T.usable & strcmp(T.Session,'communication');
                 elseif strcmp(expType,'adult_social')
                     expIdx = T.usable & strcmp(T.Session,'vocal');
