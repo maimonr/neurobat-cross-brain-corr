@@ -93,7 +93,7 @@ for bat_pair_k = 1:nBat_pair
             current_shuffled_corr = reshape(pre_calc_shuffled_corr(:,bat_pair_k,used_channel_idx,f_k,:),[nTrial n_used_channels size(pre_calc_shuffled_corr,5)]);
         end
         
-        for used_channel_k = 1:n_used_channels
+        parfor used_channel_k = 1:n_used_channels
             current_activation = reshape(bat_pair_activation(used_channel_k,:,:,:),[sum(time_idx),nTrial,2]);
             current_activation_full = reshape(bat_pair_activation_full(used_channel_k,:,:,:),[n_time_wins,nTrial,2]);
             corr_mat = corr(current_activation(:,:,1),current_activation(:,:,2));
