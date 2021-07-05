@@ -7,8 +7,8 @@ dflts  = {[],'call'};
 baseDir = unique(eData.baseDirs);
 baseDir = baseDir{1};
 expType = eData.expType;
-overwrite_ps_flag = true;
-overwrite_corr_flag = true;
+overwrite_ps_flag = false;
+overwrite_corr_flag = false;
 
 [lfp_base_dir, call_base_dir, analysis_dir, nExp, expDates, fs, T] = get_exp_setup(baseDir,expType,callType,used_exp_dates);
 
@@ -36,6 +36,7 @@ for session_k = 1:nExp
     [calculate_corr_flag,calculate_ps_flag,continue_flag] = determine_overwrite_status(results_fname,overwrite_ps_flag,overwrite_corr_flag,calculate_corr_flag);
     
     if continue_flag
+        disp('ps and corr already calculated, skipping')
         continue
     end
     
@@ -269,8 +270,7 @@ if length(expParams.batNums) <= 1
         continue_flag = true;
     end
     
-    cross_brain_corr = [];
-    shuffled_corr_p = [];
+    [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index] = deal([]);
     
 else
     [artifact_removed_ps,time_idx,ps_time] = prepare_ps_data_for_corr(ps,n_call_artifact_times,expParams,specParams);
