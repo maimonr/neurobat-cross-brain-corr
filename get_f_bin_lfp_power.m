@@ -1,4 +1,9 @@
-function lfp_power = get_f_bin_lfp_power(ps,freqs,f_bins)
+function lfp_power = get_f_bin_lfp_power(ps,freqs,f_bins,varargin)
+
+pnames = {'normFlag'};
+dflts  = {true};
+[normFlag] = internal.stats.parseArgs(pnames,dflts,varargin{:});
+
 
 nBat = size(ps,1);
 nTrial = size(ps,2);
@@ -16,8 +21,13 @@ end
 lfp_power = zeros(nBat,nTrial,nChannel,n_spec_wins,n_freq_bins);
 for f_k = 1:n_freq_bins
     freq_band_ps = ps(:,:,:,:,f_idx(:,f_k));
-    mu = nanmean(freq_band_ps,4);
-    sigma = nanstd(freq_band_ps,[],4);
+    if normFlag
+        mu = nanmean(freq_band_ps,4);
+        sigma = nanstd(freq_band_ps,[],4);
+    else
+        mu = 0;
+        sigma = 1;
+    end
     freq_band_ps_zscore = (freq_band_ps - mu)./sigma;
     lfp_power(:,:,:,:,f_k) = mean(freq_band_ps_zscore,5);
 end
