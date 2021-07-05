@@ -1,4 +1,4 @@
-function [artifact_removed_ps,time_idx,ps_time] = prepare_ps_data_for_corr(ps,n_call_artifact_times,expParams,specParams,n_csc_samp)
+function [artifact_removed_ps,time_idx,ps_time] = prepare_ps_data_for_corr(ps,n_call_artifact_times,expParams,specParams)
 
 n_time_bins = size(expParams.time_bins,1);
 lfp_call_time_s = abs(diff(expParams.call_t_win));
@@ -11,6 +11,9 @@ n_spec_bins = size(ps,4);
 for bat_k = 1:size(ps,1)
     artifact_removed_ps(bat_k,artifact_trial_idx(bat_k,:),:,:,:) = NaN;
 end
+
+lfp_call_offset_csc_samples = round(expParams.lfp_call_offset*expParams.fs);
+n_csc_samp = 2*lfp_call_offset_csc_samples + 1;
 
 csc_time = linspace(-expParams.lfp_call_offset,expParams.lfp_call_offset,n_csc_samp);
 sliding_win_idx = slidingWin(n_csc_samp,specParams.winSize,specParams.overlap);

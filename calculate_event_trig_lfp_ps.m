@@ -1,7 +1,7 @@
 function [ps,n_call_artifact_times,specParams,expParams] = calculate_event_trig_lfp_ps(expType,event_trig_fnames,varargin)
 
 if ~isempty(varargin)
-    callType = varargin;
+    callType = varargin{1};
 else
     callType = 'call';
 end
@@ -67,10 +67,13 @@ switch callType
             used_playback_timestamps = multiIntersect(event_trig_csc(:).playback_TTL_timestamps);
             
             for bat_k = 1:length(batNums)
-                keep_used_call_idx = ismember(event_trig_csc(bat_k).playback_TTL_timestamps,used_playback_timestamps);
-                event_trig_csc(bat_k).call_trig_csc = event_trig_csc(bat_k).(csc_var_name)(:,keep_used_call_idx,:);
+                keep_used_pb_idx = ismember(event_trig_csc(bat_k).playback_TTL_timestamps,used_playback_timestamps);
+                current_used_playbacks = event_trig_csc(bat_k).playback_TTL_timestamps(keep_used_pb_idx);
+                [~,sortIdx] = sort(current_used_playbacks);
+                event_trig_csc(bat_k).playback_csc = event_trig_csc(bat_k).playback_csc(:,keep_used_pb_idx,:);
+                event_trig_csc(bat_k).playback_csc = event_trig_csc(bat_k).playback_csc(:,sortIdx,:); 
             end
-            used_playback_durations = event_trig_csc(bat_k).playback_TTL_durations(keep_used_call_idx);
+            used_playback_durations = event_trig_csc(bat_k).playback_TTL_durations(keep_used_pb_idx);
         else
             used_playback_timestamps = event_trig_csc.playback_TTL_timestamps;
             used_playback_durations = event_trig_csc.playback_TTL_durations;

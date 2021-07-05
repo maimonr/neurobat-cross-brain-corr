@@ -10,7 +10,7 @@ expType = eData.expType;
 overwrite_ps_flag = true;
 overwrite_corr_flag = true;
 
-[lfp_base_dir, call_base_dir, analysis_dir, csc_var_name, nExp, expDates, fs, T] = get_exp_setup(baseDir,expType,callType,used_exp_dates);
+[lfp_base_dir, call_base_dir, analysis_dir, nExp, expDates, fs, T] = get_exp_setup(baseDir,expType,callType,used_exp_dates);
 
 f_bins = [5 20;20 70;70 150];
 
@@ -26,12 +26,12 @@ t1 = tic;
 
 for session_k = 1:nExp
     
-    [n_csc_samp, calculate_corr_flag, overwrite_ps_flag, cut_call_fname, results_fname, event_trig_csc_fnames] = ...
-        get_exp_data(session_k,expType,callType,expDates,lfp_base_dir, call_base_dir, analysis_dir, csc_var_name, T, overwrite_ps_flag);
+    [calculate_corr_flag, overwrite_ps_flag, cut_call_fname, results_fname, event_trig_csc_fnames] = ...
+        get_exp_data(session_k,expType,callType,expDates,lfp_base_dir, call_base_dir, analysis_dir, T, overwrite_ps_flag);
     
-    if isnan(n_csc_samp)
+    if isempty(event_trig_csc_fnames)
         continue
-    end
+    end    
     
     [calculate_corr_flag,calculate_ps_flag,continue_flag] = determine_overwrite_status(results_fname,overwrite_ps_flag,overwrite_corr_flag,calculate_corr_flag);
     
@@ -40,7 +40,7 @@ for session_k = 1:nExp
     end
     
     if calculate_ps_flag
-        [ps,n_call_artifact_times,specParams,expParams] = calculate_event_trig_lfp_ps(expType,event_trig_csc_fnames);
+        [ps,n_call_artifact_times,specParams,expParams] = calculate_event_trig_lfp_ps(expType,event_trig_csc_fnames,callType);
     else
         [ps,n_call_artifact_times,specParams,expParams] = deal([]);
     end
@@ -54,7 +54,7 @@ for session_k = 1:nExp
         expParams.n_shuffle_reps = n_shuffle_reps;
         expParams.corr_shuffle_type = corr_shuffle_type;
         [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index,expParams,specParams,continue_flag]...
-            = get_corr(results_fname,calculate_ps_flag,ps,n_call_artifact_times,expParams,specParams,n_csc_samp,cut_call_fname);
+            = get_corr(results_fname,calculate_ps_flag,ps,n_call_artifact_times,expParams,specParams,cut_call_fname);
         
         if continue_flag
             continue
@@ -82,7 +82,7 @@ end
 
 end
 
-function [lfp_base_dir, call_base_dir, analysis_dir, csc_var_name, nExp, expDates, fs, T] = get_exp_setup(baseDir,expType,callType,used_exp_dates)
+function [lfp_base_dir, call_base_dir, analysis_dir, nExp, expDates, fs, T] = get_exp_setup(baseDir,expType,callType,used_exp_dates)
 switch expType
     case 'test'
         
@@ -96,7 +96,6 @@ switch expType
         call_base_dir = fullfile(baseDir,'call_data');
         analysis_dir = fullfile(baseDir,'data_analysis_results','lfp_data_analysis');
         T = readtable(fullfile(baseDir,'documents','recording_logs.csv'));
-        csc_var_name = 'call_trig_csc';
         
         switch callType
             case 'call'
@@ -108,8 +107,7 @@ switch expType
             case 'operant'
                 expIdx = T.usable & strcmp(T.Session,'operant');
             case 'playback'
-                csc_var_name = 'playback_csc';
-                expIdx = true(1,size(T,1));
+                expIdx = T.usable & strcmp(T.Session,'playback');
             case 'social'
                 expIdx = T.usable & strcmp(T.Session,'social');
         end
@@ -134,14 +132,14 @@ switch expType
         
         nExp = length(all_lfp_fnames);
         fs = 1953;
-        csc_var_name = 'call_trig_csc';
 end
 end
 
-function [n_csc_samp, calculate_corr_flag, overwrite_ps_flag, cut_call_fname, results_fname, event_trig_csc_fnames] =...
-    get_exp_data(session_k,expType,callType,expDates,lfp_base_dir, call_base_dir, analysis_dir, csc_var_name,T, overwrite_ps_flag)
+function [calculate_corr_flag, overwrite_ps_flag, cut_call_fname, results_fname, event_trig_csc_fnames] =...
+    get_exp_data(session_k,expType,callType,expDates,lfp_base_dir, call_base_dir, analysis_dir,T, overwrite_ps_flag)
 
-[n_csc_samp, calculate_corr_flag, cut_call_fname] = deal(NaN);
+cut_call_fname = [];
+calculate_corr_flag = false;
 
 switch expType
     
@@ -150,7 +148,6 @@ switch expType
         results_fname = 'E:\ephys\adult_recording\data_analysis_results\lfp_data_analysis\test_call_trig_ps.mat';
         s = load(results_fname,'expParams');
         expParams = s.expParams;
-        n_csc_samp = 1+expParams.lfp_call_offset*expParams.fs*2;
         calculate_corr_flag = true;
         overwrite_ps_flag = false;
         cut_call_fname = [];
@@ -198,12 +195,7 @@ switch expType
         end
         
         calculate_corr_flag = true;
-        
-        if isnan(n_csc_samp)
-            m = matfile(fullfile(event_trig_csc_fnames(1).folder,event_trig_csc_fnames(1).name));
-            n_csc_samp = size(m.(csc_var_name),1);
-        end
-        
+
     case 'juvenile'
         
         event_trig_csc_fnames = dir(fullfile(all_lfp_fnames(session_k).folder,all_lfp_fnames(session_k).name));
@@ -214,10 +206,6 @@ switch expType
         if strcmp(warnMsg,'Variable ''call_trig_csc_struct'' not found.')
             lastwarn('')
             return
-        end
-        
-        if isempty(n_csc_samp)
-            n_csc_samp = size(s.call_trig_csc_struct.(csc_var_name),1);
         end
         
         batNums = regexp(event_trig_csc_fnames.folder,'bat\d{5}','match');
@@ -261,7 +249,7 @@ end
 end
 
 function [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index,expParams,specParams,continue_flag]...
-    = get_corr(results_fname,calculate_ps_flag,ps,n_call_artifact_times,expParams,specParams,n_csc_samp,cut_call_fname)
+    = get_corr(results_fname,calculate_ps_flag,ps,n_call_artifact_times,expParams,specParams,cut_call_fname)
 
 continue_flag = false;
 
@@ -285,7 +273,7 @@ if length(expParams.batNums) <= 1
     shuffled_corr_p = [];
     
 else
-    [artifact_removed_ps,time_idx,ps_time] = prepare_ps_data_for_corr(ps,n_call_artifact_times,expParams,specParams,n_csc_samp);
+    [artifact_removed_ps,time_idx,ps_time] = prepare_ps_data_for_corr(ps,n_call_artifact_times,expParams,specParams);
     activation = get_f_bin_lfp_power(artifact_removed_ps,specParams.freqs,expParams.f_bins);
     [cross_brain_corr,shuffled_corr_p,cross_brain_cohr,cross_brain_corr_index,expParams] =...
         get_cross_brain_corr(activation,time_idx,cut_call_fname,expParams);
