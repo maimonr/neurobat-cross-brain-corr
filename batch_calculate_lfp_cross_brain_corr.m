@@ -235,10 +235,8 @@ if exist(results_fname,'file')
     
     if overwrite_corr_flag
         calculate_corr_flag = true;
-    else
-        if ~isempty(m.cross_brain_corr)
-            calculate_corr_flag = false;
-        end
+    elseif ~isempty(m.cross_brain_corr)
+        calculate_corr_flag = false;
     end
     
     if ~overwrite_ps_flag

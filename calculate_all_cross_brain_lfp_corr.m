@@ -39,8 +39,10 @@ end
 switch callType
     case 'playback'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*playback_' event_trig_str '.mat']));
-        nBats_per_exp = 2;
-        nBats_total = 2;
+        if strcmp(eData.expType,'adult')
+            nBats_per_exp = 2;
+            nBats_total = 2;
+        end
     case 'call'
         event_trig_corr_fnames = dir(fullfile(baseDir,['*call_trig_' event_trig_str '.mat']));
     case 'operant'
